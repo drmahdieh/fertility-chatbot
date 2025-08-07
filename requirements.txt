@@ -1,5 +1,7 @@
-openai
-python-dotenv
-PyPDF2
+transformers
+torch
+langchain
+langchain-community
+langchainhub
+pypdf
 streamlit
-
