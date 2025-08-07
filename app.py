@@ -1,33 +1,47 @@
-import streamlit as st
 from openai import OpenAI
-from pdf_reader import extract_text_from_pdf
+import PyPDF2
 
-# تنظیم کلید API به صورت مستقیم (امن نیست، فقط برای تست مناسب است)
+# کلید API خودت رو اینجا وارد کن
+api_key = "YOUR_API_KEY_HERE"
+
 client = OpenAI(
-    api_key="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",
+    api_key=api_key,
     base_url="https://openrouter.ai/api/v1",
 )
 
-# بارگذاری متن از فایل PDF
+# تابع استخراج متن از PDF
+def extract_text_from_pdf(pdf_path):
+    text = ""
+    with open(pdf_path, "rb") as file:
+        reader = PyPDF2.PdfReader(file)
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+    return text
+
+# مسیر فایل PDF خودت رو اینجا قرار بده
 pdf_path = "data/infertility_guide.pdf"
+
 pdf_text = extract_text_from_pdf(pdf_path)
 
-# رابط کاربری استریملت
-st.set_page_config(page_title="دستیار ناباروری", layout="wide")
-st.title("🤖 دستیار مبتنی بر هوش مصنوعی برای راهنمایی ناباروری")
+# برای اینکه زیاد نشه فقط 4000 کاراکتر اول رو می‌گیریم
+pdf_text = pdf_text[:4000]
 
-user_question = st.text_input("❓ سوال خود را وارد کنید:")
-
-if user_question:
+def ask_bot(question):
     messages = [
-        {"role": "system", "content": "شما یک دستیار پزشکی هستید که فقط بر اساس اطلاعات زیر از فایل پاسخ می‌دهد:\n" + pdf_text[:4000]},
-        {"role": "user", "content": user_question}
+        {"role": "system", "content": "شما یک دستیار پزشکی هستید که فقط بر اساس اطلاعات زیر پاسخ می‌دهید:\n" + pdf_text},
+        {"role": "user", "content": question}
     ]
-    
     response = client.chat.completions.create(
         model="openai/gpt-3.5-turbo",
         messages=messages
     )
-    
-    st.markdown("### 🧠 پاسخ")
-    st.write(response.choices[0].message.content)
+    return response.choices[0].message.content
+
+if __name__ == "__main__":
+    print("چت‌بات پزشکی شروع به کار کرد. برای خروج exit را تایپ کنید.")
+    while True:
+        user_question = input("سوال خود را بپرسید: ")
+        if user_question.lower() == "exit":
+            break
+        answer = ask_bot(user_question)
+        print("پاسخ:", answer)
