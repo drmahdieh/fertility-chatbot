@@ -1,16 +1,9 @@
-import os
-from dotenv import load_dotenv
 from openai import OpenAI
 from pdf_reader import extract_text_from_pdf
 
-openai.api_key = "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"
-# بارگذاری کلید API از فایل env
-#load_dotenv()
-#api_key = os.getenv("OPENROUTER_API_KEY")
-
-# اتصال به OpenRouter
+# اتصال به OpenRouter با API Key مستقیم
 client = OpenAI(
-    api_key=api_key,
+    api_key="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",
     base_url="https://openrouter.ai/api/v1",
 )
 
@@ -39,4 +32,3 @@ while True:
         break
     answer = ask_bot(question)
     print("🤖 پاسخ:", answer)
-
