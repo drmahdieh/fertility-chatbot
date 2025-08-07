@@ -1,23 +1,24 @@
-import os
-from openai import OpenAI
 import streamlit as st
+from openai import OpenAI
 from pdf_reader import extract_text_from_pdf
 
-# کلید API را مستقیماً وارد کردیم
+# تنظیم کلید API به صورت مستقیم (امن نیست، فقط برای تست مناسب است)
 client = OpenAI(
     api_key="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",
     base_url="https://openrouter.ai/api/v1",
 )
 
-# متن PDF فقط یک‌بار بارگذاری شود
-@st.cache_data
-def load_pdf_text():
-    pdf_path = "data/infertility_guide.pdf"
-    return extract_text_from_pdf(pdf_path)
+# بارگذاری متن از فایل PDF
+pdf_path = "data/infertility_guide.pdf"
+pdf_text = extract_text_from_pdf(pdf_path)
 
-pdf_text = load_pdf_text()
+# رابط کاربری استریملت
+st.set_page_config(page_title="دستیار ناباروری", layout="wide")
+st.title("🤖 دستیار مبتنی بر هوش مصنوعی برای راهنمایی ناباروری")
 
-def ask_bot(user_question):
+user_question = st.text_input("❓ سوال خود را وارد کنید:")
+
+if user_question:
     messages = [
         {"role": "system", "content": "شما یک دستیار پزشکی هستید که فقط بر اساس اطلاعات زیر از فایل پاسخ می‌دهد:\n" + pdf_text[:4000]},
         {"role": "user", "content": user_question}
@@ -28,20 +29,5 @@ def ask_bot(user_question):
         messages=messages
     )
     
-    return response.choices[0].message.content
-
-
-# رابط گرافیکی با Streamlit
-st.title("🤖 چت‌بات ناباروری")
-st.write("سوالی درباره راهنمای ناباروری دارید؟ بپرسید:")
-
-user_input = st.text_input("❓ سوال خود را بنویسید:")
-
-if st.button("ارسال سوال"):
-    if user_input.strip() != "":
-        with st.spinner("در حال پردازش..."):
-            answer = ask_bot(user_input)
-            st.markdown("### 🤖 پاسخ:")
-            st.write(answer)
-    else:
-        st.warning("لطفاً یک سوال وارد کنید.")
+    st.markdown("### 🧠 پاسخ")
+    st.write(response.choices[0].message.content)
