@@ -1,48 +1,56 @@
-from openai import OpenAI
-import PyPDF2
+import streamlit as st
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.llms import HuggingFaceHub
+from langchain.chains import RetrievalQA
+import os
 
-# کلید API خودت رو اینجا وارد کن
-api_key = "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"
+# عنوان صفحه
+st.set_page_config(page_title="چت‌بات ناباروری با LLaMA3", layout="wide")
+st.title("🤖 چت‌بات ناباروری با مدل LLaMA3")
 
-client = OpenAI(
-    api_key=api_key,
-    base_url="https://openrouter.ai/api/v1",
-)
-
-# تابع استخراج متن از PDF
-def extract_text_from_pdf(pdf_path):
-    text = ""
-    with open(pdf_path, "rb") as file:
-        reader = PyPDF2.PdfReader(file)
-        for page in reader.pages:
-            text += page.extract_text() + "\n"
-    return text
-
-# مسیر فایل PDF خودت رو اینجا قرار بده
+# مسیر PDF
 pdf_path = "data/infertility_guide.pdf"
 
-pdf_text = extract_text_from_pdf(pdf_path)
+# بارگذاری فایل PDF
+@st.cache_data
+def load_and_process_pdf(pdf_path):
+    loader = PyPDFLoader(pdf_path)
+    pages = loader.load()
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = text_splitter.split_documents(pages)
+    return chunks
 
-# برای اینکه زیاد نشه فقط 4000 کاراکتر اول رو می‌گیریم
-pdf_text = pdf_text[:4000]
+# ساخت بردارها
+@st.cache_resource
+def create_vectorstore(chunks):
+    embeddings = HuggingFaceEmbeddings()
+    vectorstore = FAISS.from_documents(chunks, embeddings)
+    return vectorstore
 
-def ask_bot(question):
-    messages = [
-        {"role": "system", "content": "شما یک دستیار پزشکی هستید که فقط بر اساس اطلاعات زیر پاسخ می‌دهید:\n" + pdf_text},
-        {"role": "user", "content": question}
-    ]
-    response = client.chat.completions.create(
-        model="openai/gpt-3.5-turbo",
-        messages=messages
+# ساخت مدل LLaMA3
+def get_llama_model():
+    return HuggingFaceHub(
+        repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
+        model_kwargs={"temperature": 0.5, "max_new_tokens": 512},
+        huggingfacehub_api_token=st.secrets["HUGGINGFACEHUB_API_TOKEN"]
     )
-    return response.choices[0].message.content
 
-if __name__ == "__main__":
-    print("چت‌بات پزشکی شروع به کار کرد. برای خروج exit را تایپ کنید.")
-    while True:
-        user_question = input("سوال خود را بپرسید: ")
-        if user_question.lower() == "exit":
-            break
-        answer = ask_bot(user_question)
-        print("پاسخ:", answer)
+# اجرای اصلی
+chunks = load_and_process_pdf(pdf_path)
+vectorstore = create_vectorstore(chunks)
+llm = get_llama_model()
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    retriever=vectorstore.as_retriever()
+)
 
+# رابط کاربری
+question = st.text_input("سوال خود را وارد کنید:")
+if question:
+    with st.spinner("در حال پردازش..."):
+        answer = qa_chain.run(question)
+        st.success("پاسخ:")
+        st.write(answer)
