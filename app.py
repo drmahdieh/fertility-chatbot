@@ -25,9 +25,9 @@ def load_and_process_pdf(pdf_path):
 
 # ساخت بردارها
 @st.cache_resource
-def create_vectorstore(chunks):
+def create_vectorstore(_chunks):
     embeddings = HuggingFaceEmbeddings()
-    vectorstore = FAISS.from_documents(chunks, embeddings)
+    vectorstore = FAISS.from_documents(_chunks, embeddings)
     return vectorstore
 
 # ساخت مدل LLaMA3
@@ -35,12 +35,12 @@ def get_llama_model():
     return HuggingFaceHub(
         repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
         model_kwargs={"temperature": 0.5, "max_new_tokens": 512},
-        huggingfacehub_api_token=st.secrets["HUGGINGFACEHUB_API_TOKEN"]
+        huggingfacehub_api_token=st.secrets["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"]
     )
 
 # اجرای اصلی
 chunks = load_and_process_pdf(pdf_path)
-vectorstore = create_vectorstore(chunks)
+vectorstore = create_vectorstore(_chunks)
 llm = get_llama_model()
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
@@ -54,3 +54,4 @@ if question:
         answer = qa_chain.run(question)
         st.success("پاسخ:")
         st.write(answer)
+
