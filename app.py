@@ -2,7 +2,7 @@ from openai import OpenAI
 import PyPDF2
 
 # کلید API خودت رو اینجا وارد کن
-api_key = "YOUR_API_KEY_HERE"
+api_key = "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"
 
 client = OpenAI(
     api_key=api_key,
@@ -45,3 +45,4 @@ if __name__ == "__main__":
             break
         answer = ask_bot(user_question)
         print("پاسخ:", answer)
+
