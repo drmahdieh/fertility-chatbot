@@ -1,7 +1,5 @@
 import os
 import streamlit as st
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.llms import HuggingFaceHub
@@ -12,35 +10,16 @@ from langchain.chains import RetrievalQA
 # -----------------------------
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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"
 
-PDF_PATH = "data/infertility_guide.pdf"
-
 # -----------------------------
-# بارگذاری و پردازش PDF
+# بارگذاری vectorstore آماده
 # -----------------------------
-"""@st.cache_resource
-def load_and_split_pdf(_pdf_path):
-    loader = PyPDFLoader(_pdf_path)
-    docs = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    return text_splitter.split_documents(docs)
-
 @st.cache_resource
-def create_vectorstore(_chunks):
-    embeddings = HuggingFaceEmbeddings()
-    return FAISS.from_documents(_chunks, embeddings)
-"""
-#خودم
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+def load_vectorstore():
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    return FAISS.load_local("vectorstore", embeddings, allow_dangerous_deserialization=True)
 
-# بارگذاری Embeddings
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-
-# لود وکتور آماده
-vectorstore = FAISS.load_local("vectorstore", embeddings, allow_dangerous_deserialization=True)
-#خودم
 # -----------------------------
-# ایجاد LLM و زنجیره QA
+# ایجاد زنجیره پرسش و پاسخ
 # -----------------------------
 @st.cache_resource
 def create_qa_chain(_vectorstore):
@@ -55,25 +34,26 @@ def create_qa_chain(_vectorstore):
     )
 
 # -----------------------------
-# اجرای برنامه Streamlit
+# رابط کاربری Streamlit
 # -----------------------------
+st.set_page_config(page_title="چت‌بات PDF", page_icon="🤖")
 st.title("🤖 چت‌بات مشاوره PDF - Llama 3")
-st.write("این چت‌بات به PDF متصل است و از مدل Llama 3 استفاده می‌کند.")
+st.write("سوالت رو درباره فایل PDF بپرس، من با مدل Llama 3 پاسخ می‌دم.")
 
-chunks = load_and_split_pdf(PDF_PATH)
-vectorstore = create_vectorstore(chunks)
+# بارگذاری وکتور آماده
+vectorstore = load_vectorstore()
 qa_chain = create_qa_chain(vectorstore)
 
+# دریافت سوال کاربر
 user_question = st.text_input("سوال خود را بپرسید:")
 
+# پاسخ‌دهی
 if user_question:
     with st.spinner("در حال پردازش..."):
         result = qa_chain.invoke({"query": user_question})
         st.subheader("پاسخ:")
         st.write(result["result"])
 
-        # نمایش منابع
         st.subheader("منابع:")
         for doc in result["source_documents"]:
             st.write(f"- صفحه: {doc.metadata.get('page', 'نامشخص')}")
-
