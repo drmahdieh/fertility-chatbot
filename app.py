@@ -4,6 +4,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.llms import HuggingFaceHub
 from langchain.chains import RetrievalQA
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # -----------------------------
 # تنظیمات اولیه
@@ -57,3 +58,4 @@ if user_question:
         st.subheader("منابع:")
         for doc in result["source_documents"]:
             st.write(f"- صفحه: {doc.metadata.get('page', 'نامشخص')}")
+
