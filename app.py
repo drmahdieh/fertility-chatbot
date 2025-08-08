@@ -17,7 +17,7 @@ PDF_PATH = "data/infertility_guide.pdf"
 # -----------------------------
 # بارگذاری و پردازش PDF
 # -----------------------------
-@st.cache_resource
+"""@st.cache_resource
 def load_and_split_pdf(_pdf_path):
     loader = PyPDFLoader(_pdf_path)
     docs = loader.load()
@@ -28,7 +28,17 @@ def load_and_split_pdf(_pdf_path):
 def create_vectorstore(_chunks):
     embeddings = HuggingFaceEmbeddings()
     return FAISS.from_documents(_chunks, embeddings)
+"""
+#خودم
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
+# بارگذاری Embeddings
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+# لود وکتور آماده
+vectorstore = FAISS.load_local("vectorstore", embeddings, allow_dangerous_deserialization=True)
+#خودم
 # -----------------------------
 # ایجاد LLM و زنجیره QA
 # -----------------------------
@@ -66,3 +76,4 @@ if user_question:
         st.subheader("منابع:")
         for doc in result["source_documents"]:
             st.write(f"- صفحه: {doc.metadata.get('page', 'نامشخص')}")
+
