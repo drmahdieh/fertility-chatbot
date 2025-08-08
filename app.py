@@ -58,4 +58,3 @@ if user_question:
         st.subheader("منابع:")
         for doc in result["source_documents"]:
             st.write(f"- صفحه: {doc.metadata.get('page', 'نامشخص')}")
-
