@@ -1,10 +1,7 @@
-transformers
-torch
-langchain-community
-langchainhub
 streamlit
 langchain
-sentence-transformers
-huggingface-hub
+langchain-community
 pypdf
-
+sentence-transformers
+faiss-cpu
+huggingface-hub
